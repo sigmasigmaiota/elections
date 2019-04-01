@@ -1,0 +1,326 @@
+---
+title: "Project Proposal"
+author: "Stephen Jones"
+date: "March 30, 2019"
+output: 
+  html_document:
+    code_folding: hide
+---
+<style>
+.scroll {
+  max-height: 300px;
+  float: left;
+  width: 910px;
+  overflow-y: auto;
+}
+</style>
+I chose data from American National Election Studies. link: https://electionstudies.org/data-center/
+
+### Data Preparation
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+library(foreign)
+
+# load data
+data<-read.spss("C://Users/Stephen Jones/Documents/anes_timeseries_cdf.sav",header=TRUE)
+
+data<-as.data.frame(data)
+
+variable<-c('VCF0004',
+'VCF0301',
+'VCF0302',
+'VCF0303',
+'VCF0305',
+'VCF0306',
+'VCF0307',
+'VCF0308',
+'VCF0309',
+'VCF0101',
+'VCF0102',
+'VCF0103',
+'VCF0104',
+'VCF0105a',
+'VCF0105b',
+'VCF0106',
+'VCF0107',
+'VCF0108',
+'VCF0109',
+'VCF0110',
+'VCF0111',
+'VCF0112',
+'VCF0113',
+'VCF0846')
+
+labels<-c('STUDY VARIABLE: Year of Study',
+'PARTISANSHIP: Party Identification of Respondent- 7-point Scale',
+'PARTISANSHIP: Party Identification of Respondent- Initial Party ID Response',
+'PARTISANSHIP: Party Identification of Respondent- Summary 3-Category',
+'PARTISANSHIP: Party Identification of Respondent- Strength of Partisanship',
+'PARTISANSHIP: Party Identification of Respondents Father',
+'PARTISANSHIP: Party Identification of Respondents Mother',
+'PARTISANSHIP: Political Interest of Respondents Father',
+'PARTISANSHIP: Political Interest of Respondents Mother',
+'DEMOGRAPHICS: Respondent - Age',
+'DEMOGRAPHICS: Respondent - Age Group',
+'DEMOGRAPHICS: Respondent - Cohort',
+'DEMOGRAPHICS: Respondent - Gender',
+'DEMOCGRAPHICS: Race-ethnicity summary, 7 categories',
+'DEMOGRAPHICS: Race-ethnicity summary, 4 categories',
+'DEMOGRAPHICS: Race summary, 3 categories',
+'DEMOGRAPHICS: Respondent - Hispanic Origin Type',
+'DEMOGRAPHICS: Respondent - Hispanic Origin',
+'DEMOGRAPHICS: Respondent - Ethnicity',
+'DEMOGRAPHICS: Respondent - Education 4-category',
+'SAMPLE DESCRIPTION: Urbanism',
+'SAMPLE DESCRIPTION: Census Region',
+'SAMPLE DESCRIPTION: Political South/Nonsouth',
+'RELIGIOSITY: Is Religion Important to Respondent')
+
+key<-cbind(variable,labels)
+
+#keep only the variables of interest
+data<-data[variable]
+
+#remove observations with missing parent data
+dataC<-data[which(data$VCF0301!= ''),]
+
+dataCa<-data[which(!is.na(data$VCF0004)),]
+
+#remove observations where party of both parents are missing 
+dataD<-dataCa[which(substring(data$VCF0301,1,1)!='0'&substring(data$VCF0302,1,1)!='0'),]
+
+colnames(dataD)<-c('Year',
+'PartyID7cat',
+'PartyIDinit',
+'PartyID3cat',
+'PartyIDstr',
+'FatherID',
+'MotherID',
+'FatherInt',
+'MotherInt',
+'Age',
+'AgeGroup',
+'Cohort',
+'Gender',
+'RaceEth7cat',
+'RaceEth4cat',
+'RaceEth3cat',
+'HispLatType',
+'HispLatOrigin',
+'Ethnicity',
+'Educ4cat',
+'Urbanism',
+'CensusRegion',
+'SouthNonsouth',
+'Religion')
+
+new<-c('Year',
+'PartyID7cat',
+'PartyIDinit',
+'PartyID3cat',
+'PartyIDstr',
+'FatherID',
+'MotherID',
+'FatherInt',
+'MotherInt',
+'Age',
+'AgeGroup',
+'Cohort',
+'Gender',
+'RaceEth7cat',
+'RaceEth4cat',
+'RaceEth3cat',
+'HispLatType',
+'HispLatOrigin',
+'Ethnicity',
+'Educ4cat',
+'Urbanism',
+'CensusRegion',
+'SouthNonsouth',
+'Religion')
+
+key<-cbind(new,key)
+
+#write to csv and upload to GitHub
+write.csv(dataD,"C:/MSDS/Elections.csv")
+write.csv(key,"C:/MSDS/Variables.csv")
+
+```  
+
+The resulting data are uploaded to GitHub: https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Elections.csv
+
+### Research question  
+
+Parents transmit culture to their children. How has political affiliation been transmitted through time? Are the respondents more or less likely to adhere to the affiliation of a parent in recent years?  
+
+Put another way, does parent political affiliation predict the affiliation of individual adults, and does this vary across different demographic factors?  
+
+### Data collection  
+
+Data were collected via survey.
+
+"The American National Election Studies (www.electionstudies.org). THE ANES GUIDE TO PUBLIC OPINION AND ELECTORAL BEHAVIOR. These materials are based on work supported by the National Science Foundation under grant numbers SES 1444721, 2014-2017, the University of Michigan, and Stanford University. Any opinions, findings and conclusions, or recommendations expressed in these materials are those of the author(s) and do not necessarily reflect the views of the funding organizations."
+
+### Cases  
+
+There are 45760 observations in the preliminarily cleaned dataset.  
+
+### Variables  
+
+Variables are listed in the table below.  
+
+```{r warning=FALSE,message=FALSE}
+
+key<-read.csv("https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Variables.csv",header=TRUE)
+
+key$x<-NULL
+
+library(DT)
+datatable(key)
+
+```
+
+
+### Type of study 
+
+This is an observational study.  
+
+#### Scope of inference  
+
+The population of interest is composed of American voters.  
+
+### Data Source  
+
+I chose data from American National Election Studies, link: https://electionstudies.org/data-center/
+
+### Dependent Variable
+
+The response variable is political affiliation; it is a qualitative variable.  
+
+
+### Independent Variable
+
+The independent variables are political affiliation of one or more parents.  
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+
+```{r message=FALSE, warning=FALSE, class.output = "scroll"}
+
+data<-read.csv("https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Elections.csv",header=TRUE)
+
+summary(data)
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+respond<-data[which(data$Year == 1968 | data$Year == 1972 | data$Year == 1976 | data$Year == 1980 | data$Year == 1988 | data$Year == 1992),]
+
+#party ID of respondents
+ggplot(respond,aes(PartyID3cat,fill=PartyID3cat))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_grid(.~Year)+
+  theme(legend.position = "none") 
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+mother<-data[which(data$MotherID != '' & substring(data$MotherID,1,1) != 0),]
+
+#party ID of respondents
+ggplot(mother,aes(MotherID,fill=MotherID))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_grid(.~Year)+
+  theme(legend.position = "none") 
+  
+```
+
+```{r message=FALSE, warning=FALSE}
+
+father<-data[which(data$FatherID != '' & substring(data$FatherID,1,1) != 0),]
+
+#party ID of respondents
+ggplot(father,aes(FatherID,fill=FatherID))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_grid(.~Year)+
+  theme(legend.position = "none") 
+
+```
+
+The plots appear to align; there appear to be no major differences in proportions by year.  
+
+```{r message=FALSE, warning=FALSE}
+
+chi<-table(data$PartyID3cat,data$FatherID)
+
+chisq.test(chi)
+
+```  
+
+As expected, there is a significant effect of paternal affiliation on respondent partisan identity. Let's check the maternal affiliation.  
+
+```{r message=FALSE, warning=FALSE}
+
+chi<-table(data$PartyID3cat,data$MotherID)
+
+chisq.test(chi)
+
+```  
+
+Again, maternal affiliation predicts respondent partisanship.  
+
+```{r message=FALSE, warning=FALSE}
+
+data$PID3num<-substring(data$PartyID3cat,1,1)
+data$FIDnum<-substring(data$MotherID,1,1)
+data$MIDnum<-substring(data$FatherID,1,1)
+
+data$DiscordF <- as.numeric(data$PID3num) - as.numeric(data$FIDnum)
+
+data$DiscordM <- as.numeric(data$PID3num) - as.numeric(data$MIDnum)
+
+data$DiscordP <- as.numeric(data$MIDnum) - as.numeric(data$FIDnum)
+
+data$DiscordF[which(abs(data$DiscordF)>0)]<-1
+data$DiscordM[which(abs(data$DiscordM)>0)]<-1
+data$DiscordP[which(abs(data$DiscordP)>0)]<-1
+
+data$DiscordF<-as.factor(data$DiscordF)
+data$DiscordM<-as.factor(data$DiscordM)
+data$DiscordP<-as.factor(data$DiscordP)
+
+respond2<-data[which(data$Year == 1968 | data$Year == 1972 | data$Year == 1976 | data$Year == 1980 | data$Year == 1988 | data$Year == 1992),]
+
+#discordant affiliation with father by year
+ggplot(respond2,aes(DiscordF,fill=DiscordF))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Paternal Affiliation, Discordance by Year")
+
+#discordant affiliation with mother by year
+ggplot(respond2,aes(DiscordM,fill=DiscordM))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Maternal Affiliation, Discordance by Year")
+
+#discordant affiliation between parents by year
+ggplot(respond2,aes(DiscordP,fill=DiscordP))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Between-Parent Affiliation, Discordance by Year")
+
+```
+```
+
