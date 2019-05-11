@@ -1,0 +1,731 @@
+---
+title: "DATA 606 Data Project"
+author:
+- Stephen Jones
+date: "May 10, 2019"
+output:
+  rmdformats::readthedown:
+    code_folding: hide
+    gallery: no
+    highlight: tango
+    lightbox: yes
+    self_contained: yes
+  html_document:
+    code_folding: hide
+    df_print: paged
+---
+
+<style type="text/css">
+pre {
+  max-height: 150px;
+  float: left;
+  width: 100%;
+  overflow-y: auto;
+}
+pre.r {
+max-height: none;
+}
+h1.title {
+  color: DarkBlue;
+  font-weight: bold;
+}
+h1 { /* Header 1 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+h2 { /* Header 2 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+h3 { /* Header 3 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+h4 { /* Header 3 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+h5 { /* Header 3 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+h6 { /* Header 3 */
+  color: DarkBlue;
+  font-weight: bold;
+}
+</style>  
+
+# Part 1 - Introduction  
+
+Parents transmit culture to their children. This transmission of culture may include political affiliation. Although many notable exceptions exist, it is a common observation that parents active in politics raise children with similar political sensibilities. Further, communication technologies have developed and spread throughout the last two decades providing youth with a variety of social and political perspectives.  
+
+To examine data on political affiliation among families I used "Time Series Cumulative Data File (1948-2016)" from The American National Election Studies (www.electionstudies.org).  
+From the site:
+
+<p style="margin-left:10%; margin-right:10%;">
+"ANES Time Series studies have been conducted since 1948, typically through in-person interviewing, during years of biennial national elections. Topics cover voting behavior and the elections, together with questions on public opinion and attitudes of the electorate. In all Time Series studies, an interview is completed just after the election (the Post-election or "Post" interview); during years of Presidential elections an interview is also completed just before the election (the Pre-election or "Pre" interview)."</p>  
+
+
+How faithfully has political affiliation been transmitted to children through the years in the survey? Are the individuals more or less likely to adhere to the affiliation of at least one parent in recent years?    
+
+Does parent political affiliation predict the affiliation of individual adults, and does this vary across different demographic factors?  
+
+The answer to these questions would be useful to campaigns and movements that seek to modify public policy through elections.  
+
+
+# Part 2 - Data  
+
+The data were downloaded and examined. Preliminary cleaning follows, with variables renamed to ease analysis. Two files are created--one with data, the other with variable names and explanations. The following code chunk will not be evaluated but illustrates the initial process.  
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+library(foreign)
+
+# load data
+data<-read.spss("C://Users/Stephen Jones/Documents/anes_timeseries_cdf.sav",header=TRUE)
+
+data<-as.data.frame(data)
+
+variable<-c('VCF0004',
+'VCF0301',
+'VCF0302',
+'VCF0303',
+'VCF0305',
+'VCF0306',
+'VCF0307',
+'VCF0308',
+'VCF0309',
+'VCF0101',
+'VCF0102',
+'VCF0103',
+'VCF0104',
+'VCF0105a',
+'VCF0105b',
+'VCF0106',
+'VCF0107',
+'VCF0108',
+'VCF0109',
+'VCF0110',
+'VCF0111',
+'VCF0112',
+'VCF0113',
+'VCF0846')
+
+labels<-c('STUDY VARIABLE: Year of Study',
+'PARTISANSHIP: Party Identification of Respondent- 7-point Scale',
+'PARTISANSHIP: Party Identification of Respondent- Initial Party ID Response',
+'PARTISANSHIP: Party Identification of Respondent- Summary 3-Category',
+'PARTISANSHIP: Party Identification of Respondent- Strength of Partisanship',
+'PARTISANSHIP: Party Identification of Respondents Father',
+'PARTISANSHIP: Party Identification of Respondents Mother',
+'PARTISANSHIP: Political Interest of Respondents Father',
+'PARTISANSHIP: Political Interest of Respondents Mother',
+'DEMOGRAPHICS: Respondent - Age',
+'DEMOGRAPHICS: Respondent - Age Group',
+'DEMOGRAPHICS: Respondent - Cohort',
+'DEMOGRAPHICS: Respondent - Gender',
+'DEMOCGRAPHICS: Race-ethnicity summary, 7 categories',
+'DEMOGRAPHICS: Race-ethnicity summary, 4 categories',
+'DEMOGRAPHICS: Race summary, 3 categories',
+'DEMOGRAPHICS: Respondent - Hispanic Origin Type',
+'DEMOGRAPHICS: Respondent - Hispanic Origin',
+'DEMOGRAPHICS: Respondent - Ethnicity',
+'DEMOGRAPHICS: Respondent - Education 4-category',
+'SAMPLE DESCRIPTION: Urbanism',
+'SAMPLE DESCRIPTION: Census Region',
+'SAMPLE DESCRIPTION: Political South/Nonsouth',
+'RELIGIOSITY: Is Religion Important to Respondent')
+
+key<-cbind(variable,labels)
+
+#keep only the variables of interest
+data<-data[variable]
+
+#remove observations with missing parent data
+dataC<-data[which(data$VCF0301!= ''),]
+
+dataCa<-data[which(!is.na(data$VCF0004)),]
+
+#remove observations where party of both parents are missing 
+dataD<-dataCa[which(substring(data$VCF0301,1,1)!='0'&substring(data$VCF0302,1,1)!='0'),]
+
+colnames(dataD)<-c('Year',
+'PartyID7cat',
+'PartyIDinit',
+'PartyID3cat',
+'PartyIDstr',
+'FatherID',
+'MotherID',
+'FatherInt',
+'MotherInt',
+'Age',
+'AgeGroup',
+'Cohort',
+'Gender',
+'RaceEth7cat',
+'RaceEth4cat',
+'RaceEth3cat',
+'HispLatType',
+'HispLatOrigin',
+'Ethnicity',
+'Educ4cat',
+'Urbanism',
+'CensusRegion',
+'SouthNonsouth',
+'Religion')
+
+new<-c('Year',
+'PartyID7cat',
+'PartyIDinit',
+'PartyID3cat',
+'PartyIDstr',
+'FatherID',
+'MotherID',
+'FatherInt',
+'MotherInt',
+'Age',
+'AgeGroup',
+'Cohort',
+'Gender',
+'RaceEth7cat',
+'RaceEth4cat',
+'RaceEth3cat',
+'HispLatType',
+'HispLatOrigin',
+'Ethnicity',
+'Educ4cat',
+'Urbanism',
+'CensusRegion',
+'SouthNonsouth',
+'Religion')
+
+key<-cbind(new,key)
+
+#write to csv and upload to GitHub
+write.csv(dataD,"C:/MSDS/Elections.csv")
+write.csv(key,"C:/MSDS/Variables.csv")
+
+```  
+
+The resulting data are uploaded to GitHub.  
+
+Data: https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Elections.csv  
+
+Variables: https://github.com/sigmasigmaiota/elections/blob/master/Variables.csv  
+
+
+## Data collection  
+
+Data were collected via survey, on the phone and face-to-face. Individuals were randomly selected, one from each household. The site contains more details:  https://electionstudies.org/data-quality/  
+
+## Cases  
+
+There are 45760 observations in the preliminarily cleaned dataset, which each observation representinga survey respondent.  
+## Variables  
+
+Variables in the data are listed in the table below.  
+
+```{r warning=FALSE,message=FALSE}
+
+key<-read.csv("https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Variables.csv",header=TRUE)
+
+key$x<-NULL
+
+library(DT)
+datatable(key)
+
+```
+
+## Dependent Variable
+
+The response variable, discordance, is calculated based on two or more qualitative variables: political affiliation of the respondent and political affiliation of one or both parents.  
+
+The survey provides a 3-level collapsed variable for partisan identification for participants (Democrat, Independent, Republican); political affiliation for each parent in the survey is coded as Republican, Independent, Democrat, NA, Unknown, and Other.  
+
+Discordance is defined as a respondent partisan identity that differs from one or more parents' partisan identity with parent identity limited to Democrat, Independent and Republican identities. If a parent identifies as NA, Unknown or Other, no discordance is found.  
+
+As a related note, parental political affiliation were obtained from respondents and not the parents themselves.  
+
+## Independent Variable
+
+The independent variables are year, age of respondent, gender of respondent, and region of the United States. In these data, year is limited to the five years with complete data (1968, 1976, 1980, 1988, 1992). Gender is limited to dichotomous identity, male or female; region is a collapsed variable included in the dataset, recoded to a binary South or Nonsouth status.  
+
+## Type of study 
+
+This is an observational study. Participants were randomly selected and interviewed over the phone or face-to-face.  
+
+### Scope of inference - generalizability  
+
+The population of interest is composed of American voters. Although the sample is randomly selected, the exact composition of the pool from which the sample was drawn is unknown and likely varies through the years in the survey. Additionally, electronic data collection have changed the method by which data are collected in more recent responses. Findings from this analysis are not generalizable to the entire population of American voters, but form a basis for more exploration.  
+
+### Scope of inference - causality  
+
+These data can not be used to establish causal links. Political affiliation evolves through innumerable socioeconomic variables not quantified in these data.  
+
+This analysis explores the correlation between the variables and the calculated political discordant status as defined above.  
+
+# Part 3 - Exploratory Data Analysis  
+
+## Relevant summary statistics  
+
+Summary statistics follow: 
+
+```{r message=FALSE, warning=FALSE, class.output = "scroll"}
+
+data<-read.csv("https://raw.githubusercontent.com/sigmasigmaiota/elections/master/Elections.csv",header=TRUE)
+
+summary(data)
+```
+
+Complete data were found in the years 1968, 1972, 1976, 1980, 1988, and 1992; the following plot illustrates political affiliation of the respondents.  
+
+### Political Affiliation: Visualizations {.tabset .tabset-fade .tabset-pills}
+
+#### Respondents
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+respond<-data[which(data$Year == 1968 | data$Year == 1972 | data$Year == 1976 | data$Year == 1980 | data$Year == 1988 | data$Year == 1992),]
+
+#party ID of respondents
+ggplot(respond,aes(PartyID3cat,fill=PartyID3cat))+
+  geom_bar()+
+  facet_grid(.~Year)+
+  theme(legend.position = "none")+
+  theme_classic()+
+  labs(fill = "Party")+
+  theme(axis.text.x = element_blank())+
+  ggtitle("Political Affiliation, Respondents")
+
+```
+
+#### Maternal
+
+```{r message=FALSE, warning=FALSE}
+
+mother<-data[which(data$MotherID != '' & substring(data$MotherID,1,1) != 0),]
+
+#party ID of respondents
+ggplot(mother,aes(MotherID,fill=MotherID))+
+  geom_bar()+
+  facet_grid(.~Year)+
+  theme(legend.position = "none")+
+  theme_classic()+
+  labs(fill = "Party")+
+  theme(axis.text.x = element_blank())+
+  ggtitle("Political Affiliation, Mother")
+  
+```
+
+#### Paternal
+
+```{r message=FALSE, warning=FALSE}
+
+father<-data[which(data$FatherID != '' & substring(data$FatherID,1,1) != 0),]
+
+#party ID of respondents
+ggplot(father,aes(FatherID,fill=FatherID))+
+  geom_bar()+
+  facet_grid(.~Year)+
+  theme(legend.position = "none")+
+  theme_classic()+
+  labs(fill = "Party")+
+  theme(axis.text.x = element_blank())+
+  ggtitle("Political Affiliation, Father")
+
+```
+
+The plots appear to align; there appear to be no major differences in proportions by year.  
+
+### Analysis: Chi-squared
+
+```{r message=FALSE, warning=FALSE}
+
+chi<-table(data$PartyID3cat,data$FatherID)
+
+chisq.test(chi)
+
+```  
+
+As expected, there is a significant effect of paternal affiliation on respondent partisan identity. Let's check the maternal affiliation.  
+
+```{r message=FALSE, warning=FALSE}
+
+chi<-table(data$PartyID3cat,data$MotherID)
+
+chisq.test(chi)
+
+```  
+
+Again, maternal affiliation predicts respondent partisanship.  
+
+### Discordance  
+
+Below, discordance is assessed by comparing participant affiliation with the father's affiliation and the mother's affiliation separately. An additional variable is created to denote discordance with at least one parent. A participant was deemed discordant with a parent only if that parent identified as a Democrat, Independent or Republican; any other parental political status was deemed non-discordant.  
+
+Participants were either Democrat (including those that simply indicated that they lean Democrat), Independent, or Republican (including those that indicated that they lean Republican). Father and mother affiliation were coded as Democrat, Independent, Republican, NA, Other, and DK (except 1988).
+
+Respondents who reported not knowing political affiliation for both parents were removed, leaving 10,497 cases wherein at least one parent was identified as Republican, Democrat or Independent.  
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+#convert age variable and Year variables
+data$Age <- as.numeric(as.character(data$Age))
+data$Year <- as.factor(as.character(data$Year))
+
+#paternal and maternal party affiliation
+data$PID3num<-substring(data$PartyID3cat,1,1)
+data$FIDnum<-substring(data$MotherID,1,1)
+data$MIDnum<-substring(data$FatherID,1,1)
+
+#create gender variable
+data$Gen<-substring(data$Gender,1,1)
+data$Gen <- as.factor(as.character(data$Gen))
+
+#discordance, maternal, paternal and between parents
+data$DiscordF <- as.numeric(data$PID3num) - as.numeric(data$FIDnum)
+data$DiscordM <- as.numeric(data$PID3num) - as.numeric(data$MIDnum)
+data$DiscordP <- as.numeric(data$MIDnum) - as.numeric(data$FIDnum)
+
+data$DiscordF <- ifelse(abs(data$DiscordF)>0 & data$FIDnum >= 1 & data$FIDnum <= 3,1,0)
+data$DiscordM <- ifelse(abs(data$DiscordM)>0 & data$MIDnum >= 1 & data$MIDnum <= 3,1,0)
+data$DiscordP <- ifelse(abs(data$DiscordP)>0 & data$FIDnum >= 1 & data$FIDnum <= 3
+                        & data$MIDnum >= 1 & data$MIDnum <= 3,1,0)
+
+#create dichotomous variables
+data$DiscordF[which(abs(data$DiscordF)>0)]<-1
+data$DiscordM[which(abs(data$DiscordM)>0)]<-1
+data$DiscordP[which(abs(data$DiscordP)>0)]<-1
+
+#transform to factor
+data$DiscordF<-as.factor(data$DiscordF)
+data$DiscordM<-as.factor(data$DiscordM)
+data$DiscordP<-as.factor(data$DiscordP)
+
+data$FIDnum<-as.numeric(as.character(data$FIDnum))
+data$MIDnum<-as.numeric(as.character(data$MIDnum))
+data$PID3num<-as.numeric(as.character(data$PID3num))
+data$DiscordF<-as.numeric(as.character(data$DiscordF))
+data$DiscordM<-as.numeric(as.character(data$DiscordM))
+data$DiscordP<-as.numeric(as.character(data$DiscordP))
+
+data$anyDiscord<-ifelse(data$DiscordF == 1 | data$DiscordM == 1,1,0)
+
+#keep only years in which parent political affiliation is submitted
+respond2<-data[which(data$Year == 1968 | data$Year == 1972 | data$Year == 1976 | data$Year == 1980 | data$Year == 1988 | data$Year == 1992),]
+
+#subset dataset to remove responses wherein both mother and father political affiliation are unknown, other or NA  
+respond3<-respond2[-which((respond2$FIDnum == 9 | respond2$FIDnum == 4 | respond2$FIDnum == 0) & respond2$MIDnum == respond2$FIDnum),]
+
+```
+
+### Discordance: visualizations {.tabset .tabset-fade .tabset-pills}
+
+#### Paternal
+
+```{r message=FALSE,warning=FALSE}
+
+#discordant affiliation with father by year
+ggplot(respond2,aes(DiscordF,fill=factor(DiscordF)))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Paternal Affiliation, Discordance by Year")+
+  theme_classic() + 
+  scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))+
+  labs(fill = "Discord")
+
+```
+
+#### Maternal
+
+```{r message=FALSE,warning=FALSE}
+
+#discordant affiliation with mother by year
+ggplot(respond2,aes(DiscordM,fill=factor(DiscordM)))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Maternal Affiliation, Discordance by Year")+
+  theme_classic() + 
+  scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))+
+  labs(fill = "Discord")
+
+```
+
+#### Parents
+
+```{r message=FALSE,warning=FALSE}
+
+#discordant affiliation between parents by year
+ggplot(respond2,aes(DiscordP,fill=factor(DiscordP)))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Between-Parent Affiliation, Discordance by Year")+
+  theme_classic() + 
+  scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))+
+  labs(fill = "Discord")
+
+
+```  
+
+#### Any
+
+```{r message=FALSE,warning=FALSE}
+
+#discordant affiliation between parents by year
+ggplot(respond2,aes(anyDiscord,fill=factor(anyDiscord)))+
+  geom_bar()+
+  theme(axis.text.x = element_blank())+
+  facet_grid(.~Year)+
+  ggtitle("Discordance with at Least One Parent by Year")+
+  theme_classic() + 
+  scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))+
+  labs(fill = "Discord")
+
+
+```  
+
+***  
+
+### Conditions for inference  
+
+Let's look at the proportions of discordance overall:  
+
+```{r message = FALSE,warning=FALSE}
+
+table(respond3$anyDiscord)
+
+```
+
+Just under 50% of the sample's respondents have discordant political affiliation with one or more parents.  
+
+Let's produce a table to view contrasts by year.  
+
+```{r message=FALSE, warning=FALSE}
+
+#confirm data type as factor
+respond3$Year <- factor(respond3$Year)
+
+xtabs(~anyDiscord + Year, data = respond3)
+
+```
+
+Additionally, the code below illustrates the distribution of age in our sample to assess normality.  
+
+
+```{r message=FALSE, warning=FALSE, out.width=c('50%', '50%'), fig.show='hold'}
+
+library("ggpubr")
+
+ggdensity(respond3$Age, 
+          main = "Density plot of age",
+          xlab = "Age")
+
+hist(respond3$Age)
+
+```
+
+The distribution is unimodal; with mean 45.1 and median 43, the distribution is right-skewed.  
+
+Below, a Q-Q plot is produced below.  
+
+```{r message=FALSE, warning=FALSE}
+
+ggqqplot(respond3$Age)
+
+```
+
+Age appears to deviate from normal distribution.  
+
+In order to check more formally, a Shapiro-Wilk test is performed on a random sample of 5000; the simulation is run 1000 times to get a feel for the distribution of the p-value.  
+
+
+```{r message=FALSE,warning=FALSE}
+
+library(stats)
+
+ShapWilk<-function(x){
+cases<-sample(1:nrow(respond3),x)
+val<-shapiro.test(respond3$Age[cases])
+return(val$p.value)
+}
+
+ShapWilk.sim<-replicate(1000,ShapWilk(5000))
+
+hist(ShapWilk.sim,
+     breaks = 50)
+
+```
+
+Age is not normally distributed (p < .05).  
+
+# Part 4 - Inference  
+
+Let's check suitability for inference.  
+
+<b>We know that each observation is independent;</b> we will assume each survey response represents an individual in a different family.  
+
+<b>There are at least ten successes and failures for each year;</b> the code below confirms this assertion.  
+
+```{r message=FALSE,warning=FALSE}
+#Discordance with at least one parent, 1968, 1976, 1980, 1988 and 1992
+pol68 <- subset(respond3, Year == 1968)
+pol76 <- subset(respond3, Year == 1976)
+pol80 <- subset(respond3, Year == 1980)
+pol88 <- subset(respond3, Year == 1988)
+pol92 <- subset(respond3, Year == 1992)
+
+prop68disc<-sum(pol68$anyDiscord == 1)/nrow(pol68)
+prop76disc<-sum(pol76$anyDiscord == 1)/nrow(pol76)
+prop80disc<-sum(pol80$anyDiscord == 1)/nrow(pol80)
+prop88disc<-sum(pol88$anyDiscord == 1)/nrow(pol88)
+prop92disc<-sum(pol92$anyDiscord == 1)/nrow(pol92)
+
+cat("The proportion of discordance with at least one parent by year are:\n    1968:",round(prop68disc*100,0),"%\n    1976:",round(prop76disc*100,0),"%\n    1980:",round(prop80disc*100,0),"%\n    1988:",round(prop88disc*100,0),"%\n    1992:",round(prop92disc*100,0),"%\n")
+
+#Discordance proportions, 1968
+pol68.disc <- prop68disc*nrow(pol68)
+pol68.notdisc <- (1-prop68disc)*nrow(pol68)
+cat("Since",pol68.disc,"(discordant) &",pol68.notdisc,"(not discordant) are sufficiently large (> 10),\n\n the success-failure criterion is met for discordance in 1968.\n\n")
+
+#Discordance proportions, 1976
+pol76.disc <- prop76disc*nrow(pol76)
+pol76.notdisc <- (1-prop76disc)*nrow(pol76)
+cat("Since",pol76.disc,"(discordant) &",pol76.notdisc,"(not discordant) are sufficiently large (> 10),\n\n the success-failure criterion is met for discordance in 1976.\n\n")
+
+#Discordance proportions, 1980
+pol80.disc <- prop80disc*nrow(pol80)
+pol80.notdisc <- (1-prop80disc)*nrow(pol80)
+cat("Since",pol80.disc,"(discordant) &",pol80.notdisc,"(not discordant) are sufficiently large (> 10),\n\n the success-failure criterion is met for discordance in 1980.\n\n")
+
+#Discordance proportions, 1988
+pol88.disc <- prop88disc*nrow(pol88)
+pol88.notdisc <- (1-prop88disc)*nrow(pol88)
+cat("Since",pol88.disc,"(discordant) &",pol88.notdisc,"(not discordant) are sufficiently large (> 10),\n\n the success-failure criterion is met for discordance in 1988.\n\n")
+
+#Discordance proportions, 1992
+pol92.disc <- prop92disc*nrow(pol92)
+pol92.notdisc <- (1-prop92disc)*nrow(pol92)
+cat("Since",pol92.disc,"(discordant) &",pol92.notdisc,"(not discordant) are sufficiently large (> 10),\n\n the success-failure criterion is met for discordance in 1992.\n\n")
+```
+
+With conditions for inference satisfied, the hypothesis for analysis becomes:  
+
+$H_0$: There is no convincing evidence that a difference exists in political affiliation discordance between any pairing of years in the survey from 1968 and 1992  
+$H_A$: There is convincing evidence that difference exists in the discordance between at least one pairing of year between 1968 and 1992  
+
+The `inference` command from package `statsr` is used below.  
+
+```{r message=FALSE, warning=FALSE, out.width=c('20%', '20%', '20%', '20%', '20%'), fig.show='hold'}
+
+library(statsr)
+
+#inference, discordance 1968
+inference(y = factor(pol68$anyDiscord), data=pol76, statistic = "proportion", type = "ci", method = "theoretical", 
+          success = 1)
+
+#inference, discordance 1976
+inference(y = factor(pol76$anyDiscord), data=pol76, statistic = "proportion", type = "ci", method = "theoretical", 
+          success = 1)
+
+#inference, discordance 1980
+inference(y = factor(pol80$anyDiscord), data=pol80, statistic = "proportion", type = "ci", method = "theoretical", 
+          success = 1)
+
+#inference, discordance 1988
+inference(y = factor(pol88$anyDiscord), data=pol88, statistic = "proportion", type = "ci", method = "theoretical", 
+          success = 1)
+
+#inference, discordance 1992
+inference(y = factor(pol92$anyDiscord), data=pol92, statistic = "proportion", type = "ci", method = "theoretical", 
+          success = 1)
+
+```  
+
+Each of the confidence intervals overlap with one exception--1968 and 1992. While there is no convincing evidence that a significant change exists in the discordance between any of the years 1968, 1976, 1980, 1988, and 1992, there is no overlap between the years of 1968 and 1992. The null hypothesis is therefore rejected; there is convincing evidence that difference exists in the discordance between at least one pairing of year between 1968 and 1992.   
+
+Over the 24 years between 1968 and 1992, variations in sample discordance occurred, but a relationship was observed when 1968 and 1992 were compared.  
+
+# Binary Logistic Regression  
+
+Are year, age, gender and region predictors of discordance in these data?  
+
+A model was programmed to run a binary logistic regression for any discordance on year, age, gender and region. Year is confirmed as a factor and age is confirmed as a continuous variable.  
+
+
+```{r message= FALSE, warning=FALSE}
+
+#confirm variable type
+respond3$Year <- factor(respond3$Year)
+respond3$Age <- as.numeric(as.character(respond3$Age))
+
+#run model
+model1 <- glm(anyDiscord ~ Year + Age + Gen + SouthNonsouth, data = respond3, family = "binomial")
+
+#call values in summary
+summary(model1)
+
+```
+
+In the summary output, year, age, gender and region are statistically significant. For year in age, the log odds of political discordance with at least one parent decreases slightly by .007; for females (gender and gen value of "2"), log odds of discordance are decrease by .176. For those in the south (south vs nonsouth), log odds of discordance increase by .279. Log odds for discordance increase by roughly .218 from categorical years 1980 to 1988 and 1988 to 1992.  
+
+It's important to note that years in these data are considered to be discrete, categorical values and defined as a factor.  
+
+Confidence intervals are calculated based on standard errors: 
+
+```{r message=FALSE,warning=FALSE}
+
+#get confidence intervals based on standard errors
+confint.default(model1)
+
+```
+
+Just for fun: the code below explores the significance of year in the model using the function `wald.test`; only terms 2 through 6 are tested below, which corresponds to the list of variables above.  
+
+```{r message=FALSE,warning=FALSE}
+
+library(aod)
+
+wald.test(b = coef(model1), Sigma = vcov(model1), Terms = 2:6)
+
+```
+
+With a p-value of 0.001, the year coefficients are significant.  
+
+The code below converts log odds for the model coefficients into odds ratios.  
+
+
+```{r message=FALSE, warning=FALSE}
+
+exp(cbind(OR = coef(model1), confint(model1)))
+
+```
+
+According to the model, the odds of being discordant increase by a factor of 1.24 in years 1988 and 1992; being in the south increases the odds by 1.32, while being female or older decrease the odds of discordance.  
+
+# Conclusion
+
+Between the years of 1968 and 1992 there is a statistically significant difference in discordance; this difference appears to vary significantly by age, gender and region. When comparing the initial year and the last year of the survey there is an increase in likelihood of diverging political disposition. There are numerous options for further research to add depth to this conclusion.  
+
+These results solely address discordant political affiliations between parents and respondents as I have defined it; a change in definition would yield different results. Analysis could be run with paternal affiliation and maternal affiliation exclusively. Respondents who indicated discordance between parents could be filtered out or introduced as an additional effect in the model. Further, data that characterize respondent political engagement would be an interesting consideration. Expanded regional coding, race and economic identities could be introduced in the model as well.  
+
+As electronic data collection methods evolve, more data would enhance the ability to sense shifts political disposition among generations.
+
+# References  
+
+Data were collected by:  
+
+The American National Election Studies (www.electionstudies.org). These materials are based on work supported by the National Science Foundation under grant numbers SES 1444721, 2014-2017, the University of Michigan, and Stanford University, https://electionstudies.org/data-center/, "Time Series Cumulative Data File (1948-2016)"
+
+The following site was used as a reference for logistic regression:
+https://stats.idre.ucla.edu/r/dae/logit-regression/
